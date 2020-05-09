@@ -45,10 +45,7 @@ def receiveOnePing(mySocket, ID, timeout, destAddr):
 		recPacket, addr = mySocket.recvfrom(1024)
 		
 		# Fetch the ICMPHeader from the received IP
-		#Fill in start
-
-
-		#Fill in end
+		icmpHeader = recPacket[20:28]
 
 		rawTTL = struct.unpack("s", bytes([recPacket[8]]))[0]  
 		
@@ -56,10 +53,9 @@ def receiveOnePing(mySocket, ID, timeout, destAddr):
 		TTL = int(binascii.hexlify(rawTTL), 16) 
 		
 		# Fetch icmpType, code, checksum, packetID, and sequence from ICMPHeader using struct.unpack method
-		#Fill in start
-
-
-		#Fill in end
+		icmpType, code, checksum, packetID, sequence = struct.unpack(
+			"bbHHh", icmpHeader
+		)
 		
 		if packetID == ID:
 			byte = struct.calcsize("d") 
@@ -120,10 +116,16 @@ def ping(host, timeout=1):
 	for i in range(NUM_PACKETS):  
 		delay = doOnePing(dest, timeout)
 		print(delay)
-		time.sleep(1)# one second
+		# one second
+		time.sleep(1)
 	return delay
 	
 if __name__ == '__main__':	
-	ping("google.com")
-	#ping("localhost")
+	# ping("google.com")
+	# ping("localhost")
 
+	if len(sys.argv) < 2:
+		print("USAGE: python .\IcmpPing.py <website>")
+		sys.exit(1)
+
+	ping(sys.argv[1])
