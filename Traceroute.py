@@ -112,9 +112,9 @@ def traceroute(host, timeout=1):
 			currentAddr = addr[0]
 			currentType = request_type
 
-			if currentType == 11:
+			if currentType == ICMP_TIME_EXCEEDED:
 				RTT = int((timeReceived - timeSentbk) * 1000)
-			elif currentType == 0:
+			elif currentType == ICMP_ECHO_REPLY:
 				databytes = struct.calcsize("d")
 				timeSent = struct.unpack("d", recvPacket[28:28 + databytes])[0]
 				RTT = int((timeReceived - timeSent) * 1000)
@@ -137,7 +137,7 @@ def traceroute(host, timeout=1):
 				print("{:>10}".format("*"), end =" ")
 			print("	{}".format(currentAddr))
 		
-		if currentType == 0:
+		if currentType == ICMP_ECHO_REPLY:
 			print("")
 			print("Trace comlete.")
 			return
