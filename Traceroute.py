@@ -41,7 +41,8 @@ def getPacket(mySocket, destAddr, ID):
 	# Make a dummy header with a 0 checksum
 	# struct -- Interpret strings as packed binary data
 	header = struct.pack("BBHHH", ICMP_ECHO_REQUEST, 0, myChecksum, ID, 1)
-	data = struct.pack("d", time.time())
+	timeSent = time.time()
+	data = struct.pack("d", timeSent)
 	# Calculate the checksum on the data and the dummy header.
 
 	myChecksum = checksum(header + data) 
@@ -56,7 +57,7 @@ def getPacket(mySocket, destAddr, ID):
 	header = struct.pack("bbHHh", ICMP_ECHO_REQUEST, 0, myChecksum, ID, 1)
 	packet = header + data
 
-	return packet
+	return packet, timeSent
 
 def traceroute(host, timeout=1):
 	# timeout=1 means: If one second goes by without a reply from the server,
@@ -72,7 +73,7 @@ def traceroute(host, timeout=1):
 			RTTs.append("*")
 
 		currentAddr = ""
-		currentType = 0
+		currentType = -1
 		success = 0
 
 		for i in range(NUM_PACKETS):
@@ -88,7 +89,7 @@ def traceroute(host, timeout=1):
 			mySocket.settimeout(timeout)
 			
 			try:
-				packet = getPacket(mySocket, dest, myID)
+				packet, timeSentbk = getPacket(mySocket, dest, myID)
 				mySocket.sendto(packet, (host, 0))
 				startedSelect = time.time()
 				whatReady = select.select([mySocket], [], [], timeout)
@@ -108,15 +109,14 @@ def traceroute(host, timeout=1):
 			icmpHeader = recvPacket[20:28]
 			request_type, code, checksum, packetID, sequence = struct.unpack("bbHHh", icmpHeader)
 			
-			databytes = struct.calcsize("d")
-			timeSent = struct.unpack("d", recvPacket[28:28 + databytes])[0]
-			
 			currentAddr = addr[0]
 			currentType = request_type
 
 			if currentType == 11:
-				RTT = int((timeReceived - startedSelect) * 1000)
+				RTT = int((timeReceived - timeSentbk) * 1000)
 			elif currentType == 0:
+				databytes = struct.calcsize("d")
+				timeSent = struct.unpack("d", recvPacket[28:28 + databytes])[0]
 				RTT = int((timeReceived - timeSent) * 1000)
 
 			RTTs[i] = str(RTT)
